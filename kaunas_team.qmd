@@ -1,7 +1,6 @@
 ---
 title: 'KAUNAS'
 format: dashboard
-logo: logo.png
 
 echo: false
 ---
