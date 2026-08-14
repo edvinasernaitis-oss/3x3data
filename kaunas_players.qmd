@@ -14,7 +14,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tabulate import tabulate
 wt = pd.read_excel('WT26.xls')
-pts = pd.read_excel('3X3PTS.xls')
 wt['players'] = wt['W TEAM SQUAD'] + wt['L TEAM SQUAD']
 o = wt[(wt['OFF TEAM'] == team_name)]
 d = wt[(wt['DEF TEAM'] == team_name)]
@@ -87,7 +86,10 @@ for name in names:
                       'TO': to.get(name, 0) / games,
                       'STEALS': steal.get(name, 0) / games})
 base_stats = pd.DataFrame(base_stas)
-players_pts = pts.groupby('PLAYER')['SCORED PTS'].mean()
+players_pts = pd.DataFrame({
+    'PLAYER' :      ['VAIV', 'SAUL', 'LELI', 'JOCY', 'SORO', 'CELK'],
+    'SCORED PTS' :  [ 33/12,  50/7, 38/9, 66/12, 25/3, 12/5]
+})
 base_stats = pd.merge(base_stats, players_pts, left_on='Player', right_on='PLAYER', how='left')
 base_stats['CREATED PTS'] = base_stats['ASSISTED PTS'] + base_stats['SCORED PTS']
 base_stats['Player'] = base_stats['Player'].replace({'VAIV': 'NOJUS VAIVADA',
@@ -129,7 +131,9 @@ comba = o.groupby('COA1').agg(o_poss_tot = ('PS', 'count'),
                               o_poss_eff = ('PS', 'mean'))
 comba['pr'] = (comba['o_poss_tot'] / comba['o_poss_tot'].sum() * 100).round(1)
 comba['o_poss_eff'] = (comba['o_poss_eff'] * 100).round(1)
+comba = comba.drop(['CELK', 'SORO'], axis='index')
 comba = comba.reset_index()
+
 combs = o.groupby('COA2').agg(o_poss_tot = ('PS', 'count'),
                               o_poss_pts = ('PS', 'sum'),
                               o_poss_eff = ('PS', 'mean'))
@@ -141,6 +145,7 @@ amove = o.groupby(['COA1', 'A1M']).agg(o_poss_eff = ('PS', 'mean'))
 amove = amove.reset_index()
 amove = amove.set_index(['COA1', 'A1M']).unstack()
 amove.columns = [f'{i}_{j}' for i, j in amove.columns]
+amove = amove.drop(['CELK', 'SORO'], axis='index')
 amove = amove.reset_index()
 amove = amove[['COA1', 'o_poss_eff_D', 'o_poss_eff_P', 'o_poss_eff_S']]
 amove[['o_poss_eff_D', 'o_poss_eff_P', 'o_poss_eff_S']] = (amove[['o_poss_eff_D', 'o_poss_eff_P', 'o_poss_eff_S']] * 100).round(1)
@@ -150,13 +155,14 @@ smove = smove.reset_index()
 smove = smove.set_index(['COA2', 'A2M']).unstack()
 smove.columns = [f'{i}_{j}' for i, j in smove.columns]
 smove = smove.reset_index()
-smove = smove[['COA2', 'o_poss_eff_PP', 'o_poss_eff_PR']]
-smove[['o_poss_eff_PP', 'o_poss_eff_PR']] = (smove[['o_poss_eff_PP', 'o_poss_eff_PR']] * 100).round(1)
+smove = smove[['COA2', 'o_poss_eff_P', 'o_poss_eff_R']]
+smove[['o_poss_eff_P', 'o_poss_eff_R']] = (smove[['o_poss_eff_P', 'o_poss_eff_R']] * 100).round(1)
 
 afs = o.groupby(['COA1', 'D1M']).agg(o_poss_eff = ('PS', 'mean'))
 afs = afs.reset_index()
 afs = afs.set_index(['COA1', 'D1M']).unstack()
 afs.columns = [f'{i}_{j}' for i, j in afs.columns]
+afs = afs.drop(['CELK', 'SORO'], axis='index')
 afs = afs.reset_index()
 afs[['o_poss_eff_F', 'o_poss_eff_S']] = (afs[['o_poss_eff_F', 'o_poss_eff_S']] * 100).round(1)
 
@@ -303,8 +309,8 @@ plt.legend(frameon=False)
 
 ```{python}
 cats = smove['COA2']
-v1 = smove['o_poss_eff_PP']
-v2 = smove['o_poss_eff_PR']
+v1 = smove['o_poss_eff_P']
+v2 = smove['o_poss_eff_R']
 w = 0.4
 x = np.arange(len(cats))
 fig, ax = plt.subplots(figsize = (7.5, 4.65), 
@@ -405,7 +411,7 @@ d_smoves = d_smoves.reset_index()
 d_smoves = d_smoves.set_index(['COD2', 'A2M']).unstack()
 d_smoves.columns = [f'{i}_{j}' for i, j in d_smoves.columns]
 d_smoves = d_smoves.reset_index()
-d_smoves[['d_poss_eff_PP', 'd_poss_eff_PR']] = (d_smoves[['d_poss_eff_PP', 'd_poss_eff_PR']] * 100).round(1)
+d_smoves[['d_poss_eff_P', 'd_poss_eff_R']] = (d_smoves[['d_poss_eff_P', 'd_poss_eff_R']] * 100).round(1)
 ```
 
 ### 2VS2 DEFENSE ATTACKER 1/3 Column {width="33%"}
@@ -571,8 +577,8 @@ plt.legend(frameon=False)
 
 ```{python}
 cats = d_smoves['COD2']
-v1 = d_smoves['d_poss_eff_PP']
-v2 = d_smoves['d_poss_eff_PR']
+v1 = d_smoves['d_poss_eff_P']
+v2 = d_smoves['d_poss_eff_R']
 w = 0.4
 x = np.arange(len(cats))
 fig, ax = plt.subplots(figsize = (7.5, 4.65), 
@@ -594,7 +600,7 @@ for bar in bar2:
 ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
 plt.xticks(x, cats)
-plt.title('ATTACKER MOVE EFFICIENCY', fontsize = 16, fontweight = 'bold')
+plt.title('SCREENER MOVE EFFICIENCY', fontsize = 16, fontweight = 'bold')
 plt.legend(frameon=False)
 ```
 
